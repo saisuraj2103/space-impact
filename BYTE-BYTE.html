@@ -1,0 +1,3030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYTE BITE</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top, #15184b 0%, #070713 42%, #020205 100%);
+            color: white;
+            font-family: "Courier New", monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .game-shell {
+            width: min(940px, 96vw);
+            padding: 22px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #ffe600;
+            font-size: clamp(2rem, 6vw, 4rem);
+            letter-spacing: 8px;
+            text-shadow:
+                0 0 8px #ffe600,
+                0 0 24px rgba(255, 230, 0, 0.5);
+        }
+
+        .subtitle {
+            color: #51f7ff;
+            letter-spacing: 4px;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .hud {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 15px auto 10px;
+            max-width: 760px;
+        }
+
+        .hud-box {
+            border: 1px solid #252a67;
+            background: rgba(7, 8, 30, 0.9);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            box-shadow:
+                inset 0 0 15px rgba(0, 70, 255, 0.08),
+                0 0 8px rgba(45, 65, 255, 0.08);
+        }
+
+        .hud-label {
+            color: #777fc7;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+        }
+
+        .hud-value {
+            color: white;
+            font-size: 1.15rem;
+            margin-top: 3px;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: fit-content;
+            max-width: 100%;
+            margin: auto;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            background: #000;
+            border: 3px solid #242b9b;
+            border-radius: 7px;
+            box-shadow:
+                0 0 12px rgba(45, 65, 255, 0.8),
+                0 0 45px rgba(45, 65, 255, 0.25);
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 8, 0.84);
+            border-radius: 5px;
+            text-align: center;
+            padding: 20px;
+            backdrop-filter: blur(3px);
+        }
+
+        .overlay.hidden {
+            display: none;
+        }
+
+        .overlay-card h2 {
+            color: #ffe600;
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            margin: 0 0 12px;
+            text-shadow: 0 0 12px rgba(255, 230, 0, 0.7);
+        }
+
+        .overlay-card p {
+            line-height: 1.7;
+            color: #c9ccff;
+        }
+
+        button {
+            font-family: inherit;
+            background: #ffe600;
+            color: #050505;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 0 18px rgba(255, 230, 0, 0.4);
+            transition:
+                transform 0.15s ease,
+                background 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        button:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 0 28px rgba(255, 255, 255, 0.5);
+        }
+
+        .controls {
+            text-align: center;
+            color: #777fc7;
+            font-size: 0.75rem;
+            margin-top: 15px;
+            line-height: 1.8;
+        }
+
+        .power-indicator {
+            color: #ffe600;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .power-indicator.active {
+            opacity: 1;
+            animation: blink 0.5s infinite alternate;
+        }
+
+        @keyframes blink {
+            from {
+                opacity: 0.45;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .game-shell {
+                padding: 10px;
+            }
+
+            .hud {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            h1 {
+                letter-spacing: 4px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="game-shell">
+
+    <header>
+        <h1>BYTE BITE</h1>
+        <div class="subtitle">
+            ESCAPE THE BUGS. EAT THE BYTES.
+        </div>
+    </header>
+
+    <div class="hud">
+
+        <div class="hud-box">
+            <div class="hud-label">SCORE</div>
+            <div class="hud-value" id="score">000000</div>
+        </div>
+
+        <div class="hud-box">
+            <div class="hud-label">HIGH SCORE</div>
+            <div class="hud-value" id="highScore">000000</div>
+        </div>
+
+        <div class="hud-box">
+            <div class="hud-label">LEVEL</div>
+            <div class="hud-value" id="level">01</div>
+        </div>
+
+        <div class="hud-box">
+            <div class="hud-label">LIVES</div>
+            <div class="hud-value" id="lives">● ● ●</div>
+        </div>
+
+    </div>
+
+    <div class="canvas-container">
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="overlay" id="overlay">
+            <div class="overlay-card">
+
+                <h2 id="overlayTitle">
+                    BYTE BITE
+                </h2>
+
+                <p id="overlayText">
+                    Eat every byte.<br>
+                    Avoid the bugs.<br>
+                    Grab a power byte to enter DEBUG MODE.
+                </p>
+
+                <button id="startButton">
+                    START GAME
+                </button>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+
+        MOVE: ARROW KEYS / WASD
+        &nbsp; | &nbsp;
+        PAUSE: P
+
+        <br>
+
+        <span class="power-indicator" id="powerIndicator">
+            ⚡ DEBUG MODE ACTIVE ⚡
+        </span>
+
+    </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   BYTE BITE
+   ============================================================
+
+   MOVEMENT DESIGN
+
+   The game logic moves characters TILE BY TILE.
+
+   Rendering smoothly interpolates their pixel position between
+   the two tiles.
+
+   This prevents characters from skipping intersection checks
+   while still producing smooth animation.
+============================================================ */
+
+
+/* ============================================================
+   CONFIGURATION
+============================================================ */
+
+const TILE = 28;
+
+const MAP_TEMPLATE = [
+    "###################",
+    "#o.......#.......o#",
+    "#.###.##.#.##.###.#",
+    "#.................#",
+    "#.###.#.###.#.###.#",
+    "#.....#.....#.....#",
+    "#####.###.###.#####",
+    "#...#.........#...#",
+    "#.#.#.##GGG##.#.#.#",
+    "#.#....#   #....#.#",
+    "#.####.# G #.####.#",
+    "#......#####......#",
+    "#.####.......####.#",
+    "#o..##.#####.##..o#",
+    "###....#...#....###",
+    "#....#...P...#....#",
+    "#.##.#.#####.#.##.#",
+    "#.................#",
+    "###################"
+];
+
+const ROWS = MAP_TEMPLATE.length;
+const COLS = MAP_TEMPLATE[0].length;
+
+const PLAYER_SPEED = 130;
+const BUG_SPEED = 92;
+
+
+/* ============================================================
+   CANVAS
+============================================================ */
+
+const canvas =
+    document.getElementById("gameCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+canvas.width =
+    COLS * TILE;
+
+canvas.height =
+    ROWS * TILE;
+
+
+/* ============================================================
+   UI
+============================================================ */
+
+const overlay =
+    document.getElementById("overlay");
+
+const overlayTitle =
+    document.getElementById("overlayTitle");
+
+const overlayText =
+    document.getElementById("overlayText");
+
+const startButton =
+    document.getElementById("startButton");
+
+const scoreElement =
+    document.getElementById("score");
+
+const highScoreElement =
+    document.getElementById("highScore");
+
+const levelElement =
+    document.getElementById("level");
+
+const livesElement =
+    document.getElementById("lives");
+
+const powerIndicator =
+    document.getElementById("powerIndicator");
+
+
+/* ============================================================
+   DIRECTIONS
+============================================================ */
+
+const NONE = {
+    x: 0,
+    y: 0,
+    angle: Math.PI
+};
+
+const LEFT = {
+    x: -1,
+    y: 0,
+    angle: Math.PI
+};
+
+const RIGHT = {
+    x: 1,
+    y: 0,
+    angle: 0
+};
+
+const UP = {
+    x: 0,
+    y: -1,
+    angle: -Math.PI / 2
+};
+
+const DOWN = {
+    x: 0,
+    y: 1,
+    angle: Math.PI / 2
+};
+
+const DIRECTIONS = [
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN
+];
+
+
+/* ============================================================
+   GAME STATE
+============================================================ */
+
+let map = [];
+
+let player = null;
+
+let bugs = [];
+
+let score = 0;
+
+let highScore =
+    Number(
+        localStorage.getItem(
+            "byteBiteHighScore"
+        ) || 0
+    );
+
+let lives = 3;
+
+let level = 1;
+
+let gameRunning = false;
+
+let paused = false;
+
+/*
+    READY state.
+
+    true:
+    player frozen
+    bugs frozen
+
+    false:
+    normal game
+*/
+let waitingForMove = false;
+
+let powerMode = false;
+
+let powerEndTime = 0;
+
+let lastFrameTime = 0;
+
+let collisionLocked = false;
+
+
+/* ============================================================
+   COLORS
+============================================================ */
+
+const BUG_COLORS = [
+    "#ff3b5c",
+    "#00e5ff",
+    "#ff63d8",
+    "#ff9f21"
+];
+
+
+/* ============================================================
+   GENERAL HELPERS
+============================================================ */
+
+function formatScore(value) {
+
+    return String(value)
+        .padStart(6, "0");
+}
+
+
+function tileCenterX(tileX) {
+
+    return (
+        tileX * TILE +
+        TILE / 2
+    );
+}
+
+
+function tileCenterY(tileY) {
+
+    return (
+        tileY * TILE +
+        TILE / 2
+    );
+}
+
+
+function copyMap() {
+
+    return MAP_TEMPLATE.map(
+        row => row.split("")
+    );
+}
+
+
+function sameDirection(a, b) {
+
+    return (
+        a.x === b.x &&
+        a.y === b.y
+    );
+}
+
+
+function oppositeDirection(a, b) {
+
+    return (
+        a.x === -b.x &&
+        a.y === -b.y
+    );
+}
+
+
+function isNone(direction) {
+
+    return (
+        direction.x === 0 &&
+        direction.y === 0
+    );
+}
+
+
+/* ============================================================
+   HUD
+============================================================ */
+
+function updateHUD() {
+
+    if (score > highScore) {
+
+        highScore = score;
+
+        localStorage.setItem(
+            "byteBiteHighScore",
+            String(highScore)
+        );
+    }
+
+    scoreElement.textContent =
+        formatScore(score);
+
+    highScoreElement.textContent =
+        formatScore(highScore);
+
+    levelElement.textContent =
+        String(level)
+            .padStart(2, "0");
+
+    livesElement.textContent =
+        Array(
+            Math.max(
+                0,
+                lives
+            )
+        )
+        .fill("●")
+        .join(" ");
+}
+
+
+/* ============================================================
+   MAP
+============================================================ */
+
+function isWall(x, y) {
+
+    if (
+        x < 0 ||
+        x >= COLS ||
+        y < 0 ||
+        y >= ROWS
+    ) {
+        return true;
+    }
+
+    return (
+        map[y][x] === "#"
+    );
+}
+
+
+function canMoveFrom(
+    x,
+    y,
+    direction
+) {
+
+    if (
+        isNone(direction)
+    ) {
+        return false;
+    }
+
+    return !isWall(
+        x + direction.x,
+        y + direction.y
+    );
+}
+
+
+/* ============================================================
+   SPAWNS
+============================================================ */
+
+function locateSpawns() {
+
+    let playerSpawn = {
+        x: 9,
+        y: 15
+    };
+
+    const bugSpawns = [];
+
+    for (
+        let y = 0;
+        y < ROWS;
+        y++
+    ) {
+
+        for (
+            let x = 0;
+            x < COLS;
+            x++
+        ) {
+
+            if (
+                map[y][x] === "P"
+            ) {
+
+                playerSpawn = {
+                    x,
+                    y
+                };
+
+                map[y][x] = " ";
+            }
+
+            else if (
+                map[y][x] === "G"
+            ) {
+
+                bugSpawns.push({
+                    x,
+                    y
+                });
+
+                map[y][x] = " ";
+            }
+        }
+    }
+
+    return {
+        playerSpawn,
+        bugSpawns
+    };
+}
+
+
+/* ============================================================
+   CREATE PLAYER
+============================================================ */
+
+function createPlayer(spawn) {
+
+    return {
+
+        tileX:
+            spawn.x,
+
+        tileY:
+            spawn.y,
+
+        spawnX:
+            spawn.x,
+
+        spawnY:
+            spawn.y,
+
+        /*
+            Current rendered position.
+        */
+
+        x:
+            tileCenterX(spawn.x),
+
+        y:
+            tileCenterY(spawn.y),
+
+        /*
+            Position toward which the
+            character is moving.
+        */
+
+        targetX:
+            tileCenterX(spawn.x),
+
+        targetY:
+            tileCenterY(spawn.y),
+
+        targetTileX:
+            spawn.x,
+
+        targetTileY:
+            spawn.y,
+
+        direction:
+            NONE,
+
+        queuedDirection:
+            NONE,
+
+        moving:
+            false,
+
+        speed:
+            PLAYER_SPEED,
+
+        mouthTime:
+            0
+    };
+}
+
+
+/* ============================================================
+   CREATE BUGS
+============================================================ */
+
+function createBugs(spawns) {
+
+    return spawns.map(
+        (spawn, index) => {
+
+            return {
+
+                tileX:
+                    spawn.x,
+
+                tileY:
+                    spawn.y,
+
+                spawnX:
+                    spawn.x,
+
+                spawnY:
+                    spawn.y,
+
+                x:
+                    tileCenterX(
+                        spawn.x
+                    ),
+
+                y:
+                    tileCenterY(
+                        spawn.y
+                    ),
+
+                targetX:
+                    tileCenterX(
+                        spawn.x
+                    ),
+
+                targetY:
+                    tileCenterY(
+                        spawn.y
+                    ),
+
+                targetTileX:
+                    spawn.x,
+
+                targetTileY:
+                    spawn.y,
+
+                direction:
+                    index % 2 === 0
+                        ? LEFT
+                        : RIGHT,
+
+                moving:
+                    false,
+
+                speed:
+                    BUG_SPEED +
+                    index * 3,
+
+                color:
+                    BUG_COLORS[
+                        index %
+                        BUG_COLORS.length
+                    ],
+
+                index:
+                    index
+            };
+        }
+    );
+}
+
+
+/* ============================================================
+   LEVEL SETUP
+============================================================ */
+
+function setupLevel() {
+
+    map =
+        copyMap();
+
+    const spawns =
+        locateSpawns();
+
+    player =
+        createPlayer(
+            spawns.playerSpawn
+        );
+
+    bugs =
+        createBugs(
+            spawns.bugSpawns
+        );
+
+    disablePowerMode();
+
+    collisionLocked =
+        false;
+
+    /*
+        Game begins frozen.
+
+        Movement begins when the
+        player selects a valid direction.
+    */
+
+    waitingForMove =
+        true;
+
+    updateHUD();
+}
+
+
+/* ============================================================
+   START PLAYER TILE
+============================================================ */
+
+function startPlayerTileMove(direction) {
+
+    /*
+        Can movement begin?
+    */
+
+    if (
+        !canMoveFrom(
+            player.tileX,
+            player.tileY,
+            direction
+        )
+    ) {
+
+        player.moving =
+            false;
+
+        player.direction =
+            NONE;
+
+        return false;
+    }
+
+    player.direction =
+        direction;
+
+    player.targetTileX =
+        player.tileX +
+        direction.x;
+
+    player.targetTileY =
+        player.tileY +
+        direction.y;
+
+    player.targetX =
+        tileCenterX(
+            player.targetTileX
+        );
+
+    player.targetY =
+        tileCenterY(
+            player.targetTileY
+        );
+
+    player.moving =
+        true;
+
+    return true;
+}
+
+
+/* ============================================================
+   FINISH PLAYER TILE
+============================================================ */
+
+function finishPlayerTileMove() {
+
+    /*
+        Force an exact landing.
+
+        There is no "near center"
+        approximation anymore.
+    */
+
+    player.x =
+        player.targetX;
+
+    player.y =
+        player.targetY;
+
+    player.tileX =
+        player.targetTileX;
+
+    player.tileY =
+        player.targetTileY;
+
+    player.moving =
+        false;
+
+
+    eatCurrentTile();
+
+
+    /*
+        Buffered turn gets first priority.
+    */
+
+    if (
+        !isNone(
+            player.queuedDirection
+        ) &&
+        canMoveFrom(
+            player.tileX,
+            player.tileY,
+            player.queuedDirection
+        )
+    ) {
+
+        startPlayerTileMove(
+            player.queuedDirection
+        );
+
+        return;
+    }
+
+
+    /*
+        Otherwise continue straight.
+    */
+
+    if (
+        !isNone(
+            player.direction
+        ) &&
+        canMoveFrom(
+            player.tileX,
+            player.tileY,
+            player.direction
+        )
+    ) {
+
+        startPlayerTileMove(
+            player.direction
+        );
+
+        return;
+    }
+
+
+    /*
+        Dead end.
+    */
+
+    player.direction =
+        NONE;
+
+    player.moving =
+        false;
+}
+
+
+/* ============================================================
+   UPDATE PLAYER
+============================================================ */
+
+function updatePlayer(delta) {
+
+    player.mouthTime +=
+        delta;
+
+
+    /*
+        If stationary, attempt the
+        queued direction.
+    */
+
+    if (
+        !player.moving
+    ) {
+
+        if (
+            !isNone(
+                player.queuedDirection
+            )
+        ) {
+
+            startPlayerTileMove(
+                player.queuedDirection
+            );
+        }
+
+        return;
+    }
+
+
+    const dx =
+        player.targetX -
+        player.x;
+
+    const dy =
+        player.targetY -
+        player.y;
+
+    const remaining =
+        Math.hypot(
+            dx,
+            dy
+        );
+
+
+    const amount =
+        player.speed *
+        delta /
+        1000;
+
+
+    /*
+        We have reached the target tile.
+    */
+
+    if (
+        amount >= remaining
+    ) {
+
+        finishPlayerTileMove();
+
+        return;
+    }
+
+
+    /*
+        Smooth interpolation between
+        the current and next tile.
+    */
+
+    player.x +=
+        dx /
+        remaining *
+        amount;
+
+    player.y +=
+        dy /
+        remaining *
+        amount;
+}
+
+
+/* ============================================================
+   PELLETS
+============================================================ */
+
+function eatCurrentTile() {
+
+    const tile =
+        map[player.tileY]
+        [player.tileX];
+
+
+    if (
+        tile === "."
+    ) {
+
+        map[player.tileY]
+           [player.tileX] =
+            " ";
+
+        score += 10;
+
+        updateHUD();
+    }
+
+
+    else if (
+        tile === "o"
+    ) {
+
+        map[player.tileY]
+           [player.tileX] =
+            " ";
+
+        score += 50;
+
+        enablePowerMode();
+
+        updateHUD();
+    }
+
+
+    if (
+        foodRemaining() === 0
+    ) {
+
+        nextLevel();
+    }
+}
+
+
+function foodRemaining() {
+
+    let total = 0;
+
+    for (
+        const row of map
+    ) {
+
+        for (
+            const value of row
+        ) {
+
+            if (
+                value === "." ||
+                value === "o"
+            ) {
+
+                total++;
+            }
+        }
+    }
+
+    return total;
+}
+
+
+/* ============================================================
+   POWER MODE
+============================================================ */
+
+function enablePowerMode() {
+
+    powerMode = true;
+
+    powerEndTime =
+        performance.now() +
+        Math.max(
+            3500,
+            7000 -
+            (level - 1) * 350
+        );
+
+    powerIndicator.classList.add(
+        "active"
+    );
+}
+
+
+function disablePowerMode() {
+
+    powerMode = false;
+
+    powerEndTime = 0;
+
+    powerIndicator.classList.remove(
+        "active"
+    );
+}
+
+
+/* ============================================================
+   BUG PATHFINDING
+============================================================ */
+
+function availableBugDirections(bug) {
+
+    let available =
+        DIRECTIONS.filter(
+            direction => {
+
+                return canMoveFrom(
+                    bug.tileX,
+                    bug.tileY,
+                    direction
+                );
+            }
+        );
+
+
+    /*
+        Do not immediately reverse unless
+        the bug has no other choice.
+    */
+
+    if (
+        available.length > 1
+    ) {
+
+        const withoutReverse =
+            available.filter(
+                direction => {
+
+                    return !oppositeDirection(
+                        direction,
+                        bug.direction
+                    );
+                }
+            );
+
+        if (
+            withoutReverse.length > 0
+        ) {
+
+            available =
+                withoutReverse;
+        }
+    }
+
+
+    return available;
+}
+
+
+function distanceFromPlayer(
+    tileX,
+    tileY
+) {
+
+    return (
+        Math.abs(
+            player.tileX -
+            tileX
+        ) +
+
+        Math.abs(
+            player.tileY -
+            tileY
+        )
+    );
+}
+
+
+function chooseBugDirection(bug) {
+
+    const choices =
+        availableBugDirections(
+            bug
+        );
+
+
+    if (
+        choices.length === 0
+    ) {
+
+        return NONE;
+    }
+
+
+    /*
+        Occasional randomness keeps
+        enemies from behaving identically.
+    */
+
+    if (
+        Math.random() < 0.18
+    ) {
+
+        return choices[
+            Math.floor(
+                Math.random() *
+                choices.length
+            )
+        ];
+    }
+
+
+    const sorted =
+        [...choices];
+
+
+    sorted.sort(
+        (a, b) => {
+
+            const distanceA =
+                distanceFromPlayer(
+                    bug.tileX + a.x,
+                    bug.tileY + a.y
+                );
+
+            const distanceB =
+                distanceFromPlayer(
+                    bug.tileX + b.x,
+                    bug.tileY + b.y
+                );
+
+
+            /*
+                DEBUG MODE:
+                maximize distance.
+
+                Normal:
+                minimize distance.
+            */
+
+            if (
+                powerMode
+            ) {
+
+                return (
+                    distanceB -
+                    distanceA
+                );
+            }
+
+
+            return (
+                distanceA -
+                distanceB
+            );
+        }
+    );
+
+
+    return sorted[0];
+}
+
+
+/* ============================================================
+   START BUG TILE
+============================================================ */
+
+function startBugTileMove(bug) {
+
+    const direction =
+        chooseBugDirection(
+            bug
+        );
+
+
+    if (
+        isNone(direction)
+    ) {
+
+        bug.moving =
+            false;
+
+        return;
+    }
+
+
+    bug.direction =
+        direction;
+
+
+    bug.targetTileX =
+        bug.tileX +
+        direction.x;
+
+
+    bug.targetTileY =
+        bug.tileY +
+        direction.y;
+
+
+    bug.targetX =
+        tileCenterX(
+            bug.targetTileX
+        );
+
+
+    bug.targetY =
+        tileCenterY(
+            bug.targetTileY
+        );
+
+
+    bug.moving =
+        true;
+}
+
+
+/* ============================================================
+   FINISH BUG TILE
+============================================================ */
+
+function finishBugTileMove(bug) {
+
+    bug.x =
+        bug.targetX;
+
+    bug.y =
+        bug.targetY;
+
+
+    bug.tileX =
+        bug.targetTileX;
+
+    bug.tileY =
+        bug.targetTileY;
+
+
+    bug.moving =
+        false;
+
+
+    startBugTileMove(
+        bug
+    );
+}
+
+
+/* ============================================================
+   UPDATE BUG
+============================================================ */
+
+function updateBug(
+    bug,
+    delta
+) {
+
+    if (
+        !bug.moving
+    ) {
+
+        startBugTileMove(
+            bug
+        );
+
+        return;
+    }
+
+
+    const dx =
+        bug.targetX -
+        bug.x;
+
+    const dy =
+        bug.targetY -
+        bug.y;
+
+
+    const remaining =
+        Math.hypot(
+            dx,
+            dy
+        );
+
+
+    let speed =
+        bug.speed +
+        ((level - 1) * 2);
+
+
+    if (
+        powerMode
+    ) {
+
+        speed *= 0.72;
+    }
+
+
+    const amount =
+        speed *
+        delta /
+        1000;
+
+
+    if (
+        amount >= remaining
+    ) {
+
+        finishBugTileMove(
+            bug
+        );
+
+        return;
+    }
+
+
+    bug.x +=
+        dx /
+        remaining *
+        amount;
+
+
+    bug.y +=
+        dy /
+        remaining *
+        amount;
+}
+
+
+/* ============================================================
+   COLLISION
+============================================================ */
+
+function checkCollision() {
+
+    if (
+        waitingForMove ||
+        collisionLocked ||
+        !gameRunning
+    ) {
+
+        return;
+    }
+
+
+    for (
+        const bug of bugs
+    ) {
+
+        const distance =
+            Math.hypot(
+                player.x -
+                bug.x,
+
+                player.y -
+                bug.y
+            );
+
+
+        if (
+            distance <
+            TILE * 0.53
+        ) {
+
+            if (
+                powerMode
+            ) {
+
+                eatBug(
+                    bug
+                );
+            }
+
+            else {
+
+                loseLife();
+            }
+
+
+            return;
+        }
+    }
+}
+
+
+/* ============================================================
+   EAT BUG
+============================================================ */
+
+function eatBug(bug) {
+
+    score += 200;
+
+    updateHUD();
+
+
+    bug.tileX =
+        bug.spawnX;
+
+    bug.tileY =
+        bug.spawnY;
+
+
+    bug.x =
+        tileCenterX(
+            bug.spawnX
+        );
+
+
+    bug.y =
+        tileCenterY(
+            bug.spawnY
+        );
+
+
+    bug.targetTileX =
+        bug.spawnX;
+
+    bug.targetTileY =
+        bug.spawnY;
+
+
+    bug.targetX =
+        bug.x;
+
+    bug.targetY =
+        bug.y;
+
+
+    bug.direction =
+        LEFT;
+
+
+    bug.moving =
+        false;
+}
+
+
+/* ============================================================
+   LOSE LIFE
+============================================================ */
+
+function loseLife() {
+
+    if (
+        collisionLocked
+    ) {
+
+        return;
+    }
+
+
+    collisionLocked =
+        true;
+
+
+    lives--;
+
+
+    updateHUD();
+
+
+    if (
+        lives <= 0
+    ) {
+
+        gameOver();
+
+        return;
+    }
+
+
+    resetAfterDeath();
+}
+
+
+/* ============================================================
+   RESET AFTER DEATH
+============================================================ */
+
+function resetAfterDeath() {
+
+    /*
+        PLAYER
+    */
+
+    player.tileX =
+        player.spawnX;
+
+    player.tileY =
+        player.spawnY;
+
+
+    player.x =
+        tileCenterX(
+            player.spawnX
+        );
+
+
+    player.y =
+        tileCenterY(
+            player.spawnY
+        );
+
+
+    player.targetTileX =
+        player.spawnX;
+
+    player.targetTileY =
+        player.spawnY;
+
+
+    player.targetX =
+        player.x;
+
+    player.targetY =
+        player.y;
+
+
+    player.direction =
+        NONE;
+
+
+    player.queuedDirection =
+        NONE;
+
+
+    player.moving =
+        false;
+
+
+    player.mouthTime =
+        0;
+
+
+    /*
+        BUGS
+    */
+
+    bugs.forEach(
+        (bug, index) => {
+
+            bug.tileX =
+                bug.spawnX;
+
+
+            bug.tileY =
+                bug.spawnY;
+
+
+            bug.x =
+                tileCenterX(
+                    bug.spawnX
+                );
+
+
+            bug.y =
+                tileCenterY(
+                    bug.spawnY
+                );
+
+
+            bug.targetTileX =
+                bug.spawnX;
+
+
+            bug.targetTileY =
+                bug.spawnY;
+
+
+            bug.targetX =
+                bug.x;
+
+
+            bug.targetY =
+                bug.y;
+
+
+            bug.direction =
+                index % 2 === 0
+                    ? LEFT
+                    : RIGHT;
+
+
+            bug.moving =
+                false;
+        }
+    );
+
+
+    disablePowerMode();
+
+
+    /*
+        THIS IS THE IMPORTANT PART.
+
+        Nothing moves.
+
+        The main update loop returns
+        immediately while this is true.
+    */
+
+    waitingForMove =
+        true;
+
+
+    collisionLocked =
+        false;
+}
+
+
+/* ============================================================
+   NEXT LEVEL
+============================================================ */
+
+function nextLevel() {
+
+    score += 500;
+
+    level++;
+
+    updateHUD();
+
+    setupLevel();
+}
+
+
+/* ============================================================
+   GAME OVER
+============================================================ */
+
+function gameOver() {
+
+    gameRunning =
+        false;
+
+    waitingForMove =
+        false;
+
+    disablePowerMode();
+
+    updateHUD();
+
+
+    overlayTitle.textContent =
+        "GAME OVER";
+
+
+    overlayText.innerHTML =
+        `
+        FINAL SCORE:
+        <strong>${formatScore(score)}</strong>
+        <br><br>
+        The bugs won this deployment.
+        `;
+
+
+    startButton.textContent =
+        "TRY AGAIN";
+
+
+    overlay.classList.remove(
+        "hidden"
+    );
+}
+
+
+/* ============================================================
+   UPDATE GAME
+============================================================ */
+
+function updateGame(
+    delta,
+    timestamp
+) {
+
+    /*
+        ABSOLUTE FREEZE.
+
+        This guarantees both player
+        and bugs remain motionless
+        during READY.
+    */
+
+    if (
+        waitingForMove
+    ) {
+
+        return;
+    }
+
+
+    updatePlayer(
+        delta
+    );
+
+
+    for (
+        const bug of bugs
+    ) {
+
+        updateBug(
+            bug,
+            delta
+        );
+    }
+
+
+    checkCollision();
+
+
+    if (
+        powerMode &&
+        timestamp >=
+        powerEndTime
+    ) {
+
+        disablePowerMode();
+    }
+}
+
+
+/* ============================================================
+   DRAW WALL
+============================================================ */
+
+function drawWall(x, y) {
+
+    const px =
+        x * TILE;
+
+    const py =
+        y * TILE;
+
+
+    const gradient =
+        ctx.createLinearGradient(
+            px,
+            py,
+            px + TILE,
+            py + TILE
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#07113f"
+    );
+
+
+    gradient.addColorStop(
+        1,
+        "#101d72"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+
+    ctx.fillRect(
+        px,
+        py,
+        TILE,
+        TILE
+    );
+
+
+    ctx.strokeStyle =
+        "#3047ff";
+
+
+    ctx.lineWidth =
+        2;
+
+
+    ctx.strokeRect(
+        px + 2,
+        py + 2,
+        TILE - 4,
+        TILE - 4
+    );
+
+
+    ctx.strokeStyle =
+        "rgba(0,217,255,0.16)";
+
+
+    ctx.lineWidth =
+        1;
+
+
+    ctx.strokeRect(
+        px + 6,
+        py + 6,
+        TILE - 12,
+        TILE - 12
+    );
+}
+
+
+/* ============================================================
+   DRAW PELLET
+============================================================ */
+
+function drawPellet(
+    x,
+    y,
+    power,
+    timestamp
+) {
+
+    const cx =
+        tileCenterX(x);
+
+    const cy =
+        tileCenterY(y);
+
+
+    let radius =
+        power
+            ? 5
+            : 2.4;
+
+
+    if (
+        power
+    ) {
+
+        radius +=
+            Math.sin(
+                timestamp /
+                130
+            ) *
+            1.4;
+    }
+
+
+    ctx.save();
+
+
+    if (
+        power
+    ) {
+
+        ctx.shadowBlur =
+            18;
+
+
+        ctx.shadowColor =
+            "#ffffff";
+    }
+
+
+    ctx.fillStyle =
+        power
+            ? "#ffffff"
+            : "#ffd6b0";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        cx,
+        cy,
+        radius,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+}
+
+
+/* ============================================================
+   DRAW MAP
+============================================================ */
+
+function drawMap(timestamp) {
+
+    ctx.fillStyle =
+        "#000";
+
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    for (
+        let y = 0;
+        y < ROWS;
+        y++
+    ) {
+
+        for (
+            let x = 0;
+            x < COLS;
+            x++
+        ) {
+
+            const tile =
+                map[y][x];
+
+
+            if (
+                tile === "#"
+            ) {
+
+                drawWall(
+                    x,
+                    y
+                );
+            }
+
+
+            else if (
+                tile === "."
+            ) {
+
+                drawPellet(
+                    x,
+                    y,
+                    false,
+                    timestamp
+                );
+            }
+
+
+            else if (
+                tile === "o"
+            ) {
+
+                drawPellet(
+                    x,
+                    y,
+                    true,
+                    timestamp
+                );
+            }
+        }
+    }
+}
+
+
+/* ============================================================
+   DRAW PLAYER
+============================================================ */
+
+function drawPlayer() {
+
+    let facing =
+        player.direction;
+
+
+    if (
+        isNone(facing)
+    ) {
+
+        facing =
+            isNone(
+                player.queuedDirection
+            )
+                ? LEFT
+                : player.queuedDirection;
+    }
+
+
+    /*
+        Animate mouth only while moving.
+    */
+
+    const mouth =
+        player.moving
+            ? (
+                0.14 +
+                Math.abs(
+                    Math.sin(
+                        player.mouthTime /
+                        80
+                    )
+                ) *
+                0.31
+            )
+            : 0.20;
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        player.x,
+        player.y
+    );
+
+
+    ctx.rotate(
+        facing.angle
+    );
+
+
+    ctx.shadowBlur =
+        14;
+
+
+    ctx.shadowColor =
+        "#ffe600";
+
+
+    ctx.fillStyle =
+        "#ffe600";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        0,
+        0,
+        TILE * 0.38,
+        mouth,
+        Math.PI * 2 -
+        mouth
+    );
+
+
+    ctx.lineTo(
+        0,
+        0
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+}
+
+
+/* ============================================================
+   DRAW BUG
+============================================================ */
+
+function drawBug(
+    bug,
+    timestamp
+) {
+
+    let color =
+        powerMode
+            ? "#3d5cff"
+            : bug.color;
+
+
+    /*
+        DEBUG MODE warning flash.
+    */
+
+    if (
+        powerMode &&
+        powerEndTime -
+        performance.now() <
+        1600 &&
+        Math.floor(
+            timestamp /
+            130
+        ) % 2 === 0
+    ) {
+
+        color =
+            "#ffffff";
+    }
+
+
+    const bob =
+        waitingForMove
+            ? 0
+            : (
+                Math.sin(
+                    timestamp /
+                    110 +
+                    bug.index
+                ) *
+                1
+            );
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        bug.x,
+        bug.y + bob
+    );
+
+
+    ctx.shadowBlur =
+        10;
+
+
+    ctx.shadowColor =
+        color;
+
+
+    ctx.fillStyle =
+        color;
+
+
+    /*
+        Bug body
+    */
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        0,
+        -2,
+        TILE * 0.32,
+        Math.PI,
+        0
+    );
+
+
+    ctx.lineTo(
+        TILE * 0.32,
+        TILE * 0.27
+    );
+
+
+    ctx.lineTo(
+        TILE * 0.16,
+        TILE * 0.12
+    );
+
+
+    ctx.lineTo(
+        0,
+        TILE * 0.27
+    );
+
+
+    ctx.lineTo(
+        -TILE * 0.16,
+        TILE * 0.12
+    );
+
+
+    ctx.lineTo(
+        -TILE * 0.32,
+        TILE * 0.27
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    ctx.shadowBlur =
+        0;
+
+
+    /*
+        Eyes
+    */
+
+    ctx.fillStyle =
+        "#ffffff";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        -5,
+        -3,
+        3.2,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.arc(
+        5,
+        -3,
+        3.2,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    /*
+        Pupils
+    */
+
+    const pupilX =
+        bug.direction.x *
+        1.5;
+
+
+    const pupilY =
+        bug.direction.y *
+        1.5;
+
+
+    ctx.fillStyle =
+        "#111111";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        -5 + pupilX,
+        -3 + pupilY,
+        1.4,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.arc(
+        5 + pupilX,
+        -3 + pupilY,
+        1.4,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+}
+
+
+/* ============================================================
+   READY
+============================================================ */
+
+function drawReady() {
+
+    if (
+        !waitingForMove
+    ) {
+
+        return;
+    }
+
+
+    ctx.save();
+
+
+    ctx.fillStyle =
+        "rgba(0,0,0,0.60)";
+
+
+    ctx.fillRect(
+        0,
+        canvas.height / 2 - 44,
+        canvas.width,
+        88
+    );
+
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.fillStyle =
+        "#ffe600";
+
+
+    ctx.shadowBlur =
+        12;
+
+
+    ctx.shadowColor =
+        "#ffe600";
+
+
+    ctx.font =
+        "bold 25px Courier New";
+
+
+    ctx.fillText(
+        "READY!",
+        canvas.width / 2,
+        canvas.height / 2 - 7
+    );
+
+
+    ctx.shadowBlur =
+        0;
+
+
+    ctx.fillStyle =
+        "#73edff";
+
+
+    ctx.font =
+        "12px Courier New";
+
+
+    ctx.fillText(
+        "PRESS A VALID MOVEMENT KEY",
+        canvas.width / 2,
+        canvas.height / 2 + 22
+    );
+
+
+    ctx.restore();
+}
+
+
+/* ============================================================
+   PAUSE
+============================================================ */
+
+function drawPause() {
+
+    if (
+        !paused
+    ) {
+
+        return;
+    }
+
+
+    ctx.save();
+
+
+    ctx.fillStyle =
+        "rgba(0,0,0,0.75)";
+
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.fillStyle =
+        "#ffe600";
+
+
+    ctx.font =
+        "bold 30px Courier New";
+
+
+    ctx.fillText(
+        "PAUSED",
+        canvas.width / 2,
+        canvas.height / 2
+    );
+
+
+    ctx.fillStyle =
+        "#73edff";
+
+
+    ctx.font =
+        "12px Courier New";
+
+
+    ctx.fillText(
+        "PRESS P TO CONTINUE",
+        canvas.width / 2,
+        canvas.height / 2 + 30
+    );
+
+
+    ctx.restore();
+}
+
+
+/* ============================================================
+   DRAW FRAME
+============================================================ */
+
+function draw(timestamp) {
+
+    drawMap(
+        timestamp
+    );
+
+
+    drawPlayer();
+
+
+    for (
+        const bug of bugs
+    ) {
+
+        drawBug(
+            bug,
+            timestamp
+        );
+    }
+
+
+    drawReady();
+
+
+    drawPause();
+}
+
+
+/* ============================================================
+   MAIN LOOP
+============================================================ */
+
+function gameLoop(timestamp) {
+
+    if (
+        !gameRunning
+    ) {
+
+        return;
+    }
+
+
+    const delta =
+        Math.min(
+            timestamp -
+            lastFrameTime,
+            32
+        );
+
+
+    lastFrameTime =
+        timestamp;
+
+
+    if (
+        !paused
+    ) {
+
+        updateGame(
+            delta,
+            timestamp
+        );
+    }
+
+
+    draw(
+        timestamp
+    );
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+}
+
+
+/* ============================================================
+   PLAYER INPUT
+============================================================ */
+
+function setPlayerDirection(direction) {
+
+    if (
+        !player ||
+        !gameRunning ||
+        paused
+    ) {
+
+        return;
+    }
+
+
+    /*
+        READY STATE
+
+        Only a VALID direction releases
+        the player and bugs.
+
+        This prevents pressing directly
+        into a wall from accidentally
+        starting the life.
+    */
+
+    if (
+        waitingForMove
+    ) {
+
+        if (
+            !canMoveFrom(
+                player.tileX,
+                player.tileY,
+                direction
+            )
+        ) {
+
+            return;
+        }
+
+
+        player.queuedDirection =
+            direction;
+
+
+        player.direction =
+            direction;
+
+
+        waitingForMove =
+            false;
+
+
+        startPlayerTileMove(
+            direction
+        );
+
+
+        /*
+            Reset timer.
+
+            Prevents a large first
+            animation frame.
+        */
+
+        lastFrameTime =
+            performance.now();
+
+
+        return;
+    }
+
+
+    /*
+        Remember the requested direction.
+
+        It will automatically be used
+        at the next valid junction.
+    */
+
+    player.queuedDirection =
+        direction;
+
+
+    /*
+        Immediate 180-degree reversal.
+
+        Example:
+
+        moving RIGHT
+        player presses LEFT
+        reverse immediately.
+    */
+
+    if (
+        player.moving &&
+        oppositeDirection(
+            direction,
+            player.direction
+        )
+    ) {
+
+        /*
+            Swap current tile and
+            target tile.
+        */
+
+        const oldTileX =
+            player.tileX;
+
+        const oldTileY =
+            player.tileY;
+
+
+        player.tileX =
+            player.targetTileX;
+
+        player.tileY =
+            player.targetTileY;
+
+
+        player.targetTileX =
+            oldTileX;
+
+        player.targetTileY =
+            oldTileY;
+
+
+        player.targetX =
+            tileCenterX(
+                oldTileX
+            );
+
+
+        player.targetY =
+            tileCenterY(
+                oldTileY
+            );
+
+
+        player.direction =
+            direction;
+
+
+        return;
+    }
+
+
+    /*
+        If stationary, start immediately
+        when the requested direction is
+        available.
+    */
+
+    if (
+        !player.moving &&
+        canMoveFrom(
+            player.tileX,
+            player.tileY,
+            direction
+        )
+    ) {
+
+        startPlayerTileMove(
+            direction
+        );
+    }
+}
+
+
+/* ============================================================
+   KEYBOARD
+============================================================ */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        const key =
+            event.key
+                .toLowerCase();
+
+
+        if (
+            [
+                "arrowleft",
+                "arrowright",
+                "arrowup",
+                "arrowdown",
+                "w",
+                "a",
+                "s",
+                "d"
+            ].includes(key)
+        ) {
+
+            event.preventDefault();
+        }
+
+
+        if (
+            key === "arrowleft" ||
+            key === "a"
+        ) {
+
+            setPlayerDirection(
+                LEFT
+            );
+        }
+
+
+        else if (
+            key === "arrowright" ||
+            key === "d"
+        ) {
+
+            setPlayerDirection(
+                RIGHT
+            );
+        }
+
+
+        else if (
+            key === "arrowup" ||
+            key === "w"
+        ) {
+
+            setPlayerDirection(
+                UP
+            );
+        }
+
+
+        else if (
+            key === "arrowdown" ||
+            key === "s"
+        ) {
+
+            setPlayerDirection(
+                DOWN
+            );
+        }
+
+
+        else if (
+            key === "p" &&
+            gameRunning &&
+            !waitingForMove
+        ) {
+
+            paused =
+                !paused;
+
+
+            lastFrameTime =
+                performance.now();
+        }
+    }
+);
+
+
+/* ============================================================
+   START GAME
+============================================================ */
+
+function startGame() {
+
+    score = 0;
+
+    lives = 3;
+
+    level = 1;
+
+    paused = false;
+
+    gameRunning = true;
+
+
+    setupLevel();
+
+
+    overlay.classList.add(
+        "hidden"
+    );
+
+
+    lastFrameTime =
+        performance.now();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+}
+
+
+/* ============================================================
+   START BUTTON
+============================================================ */
+
+startButton.addEventListener(
+    "click",
+    startGame
+);
+
+
+/* ============================================================
+   INITIAL PREVIEW
+============================================================ */
+
+function initialPreview() {
+
+    map =
+        copyMap();
+
+
+    const spawns =
+        locateSpawns();
+
+
+    player =
+        createPlayer(
+            spawns.playerSpawn
+        );
+
+
+    bugs =
+        createBugs(
+            spawns.bugSpawns
+        );
+
+
+    updateHUD();
+
+
+    draw(
+        performance.now()
+    );
+}
+
+
+initialPreview();
+
+</script>
+
+</body>
+</html>
